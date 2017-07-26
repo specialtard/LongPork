@@ -24,29 +24,37 @@ public class CreateProduct : MonoBehaviour
     private Transform newProduct;
     private int largestRow = 0;
     private int order = -1;
-
-    private int nullCount;
+    private bool finished = false;
     private static int touchCount;
+    private Animator anim;
+    private AudioSource audio;
+    private static bool isDone = false;
+    private ParticleSystem[] particle;
 
-    //Oue fields for the final product
-    private float totalValue;
-
+    public static bool IsDone { get { return isDone; } set { isDone = value; } }
     public static int TouchCount { get { return touchCount; } set { touchCount = value; } }
 
     //This function will take all the data store in the selection list (from IngredientMembers) and create a combined product. Create a new gameobject from it, and add to the database.
     //TODO combine all the sprites, values, combo,names etc and create a new prefab from it and put it into the database. Make sure to add the IngredientMembers script so we can store members
 
-    void Start()
+    void Awake()
     {
         allValues = new List<float>();
         stats = GameObject.FindGameObjectWithTag("Stats").GetComponent<Text>();
         rowOrganizer = GameObject.FindWithTag("RowOrganizer").transform;
         newProduct = GameObject.FindWithTag("NewProduct").transform;
+        anim = newProduct.GetComponent<Animator>();
+        audio = newProduct.GetComponent<AudioSource>();
+        particle = FindObjectsOfType<ParticleSystem>();
+    }
+
+    void Start()
+    {
     }
 
     void Update()
     {
-        //Move the items together after a delay, use a coroutine
+        PlayAfterAnimation(audio,audio.clip);
     }
 
     public void NewProduct()
@@ -56,34 +64,33 @@ public class CreateProduct : MonoBehaviour
         OrganizeSelections();
 
         //Very important we delete the row AFTER we organize the list into a new array. If we dont delete the rows the collider will get in the way of the create screen.
-        DeleteCells();
+        //DeleteCells();
 
         EditOrganizedSelection();
         CloneSelection();
-        
 
         //Utility for now
         DisplayValues();
-        
 
-        totalValue = Calculate.ProductValue(allValues.ToArray());
-        stats.text = "Your Product has a value of: \n" + "$" + totalValue;
+        anim.SetBool("DroppedDown", true);
+        
     }
 
     //The Main functions that allow us to make the actual product.
 
     void CloneSelection()
     {
-        foreach (var original in organizedSelection)
+        for (int i = 0; i < organizedSelection.Length; i++)
         {
-            if (original != null)
+            if (organizedSelection[i] != null)
             {
-                nullCount++;
+                GameObject clone = Instantiate(organizedSelection[i], transform.position, Quaternion.identity, newProduct);
+                var rect = clone.GetComponent<RectTransform>();
 
-                GameObject clone = Instantiate(original, transform.position, Quaternion.identity, newProduct);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
 
-                //TODO All the data manipulation for the new clone, put this in a Function later
-                
             }
         }
     }
@@ -105,28 +112,25 @@ public class CreateProduct : MonoBehaviour
         }
     }
 
-    //This Coroutine is to check if we have squeezed everything together. *Not in use as of 0.1.0.8*
-    IEnumerator CheckSqueeze()
+    void PlayAfterAnimation(AudioSource source, AudioClip audio)
     {
-        yield return new WaitForSeconds(1);
-
-        Debug.Log("Null count:" + nullCount + "\nTouch count: " + touchCount);
-
-        if (touchCount == nullCount)
+        if (!isDone)
         {
-            SceneManager.LoadScene("NewProduct");
+            source.PlayDelayed(0.20f);
+            StartCoroutine("EnableParticles");
+            isDone = true;
         }
 
-        
     }
 
-    IEnumerator TransformPosition()
+    IEnumerator EnableParticles()
     {
-        yield return new WaitForSeconds(3);
-        //Move all children to a center spot?
+        yield return new WaitForSeconds(0.4f);
 
-
-
+        foreach (var item in particle)
+        {
+            item.GetComponent<ParticleSystemRenderer>().enabled = true;
+        }
     }
 
     //Utility functions, testing etc
@@ -155,6 +159,7 @@ public class CreateProduct : MonoBehaviour
     {
         //Delete the rows for a fresh start
         DeleteRows();
+        anim.SetBool("DroppedDown", false);
 
         //We need to make sure ALL lists are cleared, not just the list of GameObjects in selection. We only really need to trim the List of GameObjects for now
         ResetList(selection);
@@ -163,11 +168,12 @@ public class CreateProduct : MonoBehaviour
         //Clear all the other lists for fresh information
         allValues.Clear();
         largestRow = 0;
-        nullCount = 0;
         touchCount = 0;
-
+        isDone = false;
+        
         //Set all the cells "isUsed" Values to false
         ChangeIsUsed();
+        enabled = false;
     }
 
     void DeleteRows()
@@ -183,7 +189,10 @@ public class CreateProduct : MonoBehaviour
         {
             Destroy(item);
         }
-
+        foreach (var item in particle)
+        {
+            item.GetComponent<ParticleSystemRenderer>().enabled = false;
+        }
 
     }
 

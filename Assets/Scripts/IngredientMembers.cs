@@ -52,6 +52,7 @@ public class IngredientMembers : MonoBehaviour {
     {
         if (col.tag == "DatabaseRow")
         {
+            Debug.Log("Entering a trigger for items");
             CreateProduct.selection.Add(gameObject); 
         }
         else if (col.tag == "DatabaseItem")
@@ -65,21 +66,12 @@ public class IngredientMembers : MonoBehaviour {
     {
         if (col.tag == "DatabaseRow")
         {
+            Debug.Log("Exiting a trigger for items");
             CreateProduct.selection.Remove(gameObject); 
         }
         else if (col.tag == "DatabaseItem")
         {
             Debug.Log("Exiting a trigger for items");
-        }
-    }
-
-    void OnCollisionEnter2D(Collision2D col)
-    {
-        if (!hasCollided)
-        {
-            HasCollided = true;
-            CreateProduct.TouchCount++;
-            Debug.Log("Entering a collision for items");
         }
     }
 }

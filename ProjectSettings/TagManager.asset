@@ -12,6 +12,7 @@ TagManager:
   - CreateTop
   - CreateBottom
   - NewProduct
+  - Product
   layers:
   - Default
   - TransparentFX

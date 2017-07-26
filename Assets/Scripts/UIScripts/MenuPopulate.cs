@@ -93,10 +93,18 @@ public class MenuPopulate : MonoBehaviour
 
     void UpdateRow()
     {
-        if (transform.parent != null)
+        try
         {
-            cellID = GetComponentInParent<IsRowUsed>();
-            rowID = cellID.rowID;
+            if (transform.parent != null)
+            {
+                cellID = GetComponentInParent<IsRowUsed>();
+                rowID = cellID.rowID;
+            }
+        }
+        catch (NullReferenceException)
+        {
+            
+            Debug.Log("We are moving the transform");
         }
     }
 }
